@@ -34,17 +34,22 @@ for season, avg in seasonal_averages.items():
 
 combined_df["MaxTemp"] = combined_df[month_columns].max(axis=1)
 combined_df["MinTemp"] = combined_df[month_columns].min(axis=1)
-combined_df["TempRange"] = combined_df["MaxTemp"] - combined_df["MinTemp"]
 
-max_range = combined_df["TempRange"].max()
-largest_range_stations = combined_df[combined_df["TempRange"] == max_range]
+station_col ="STATION_NAME"
+station_extremes = combined_df.groupby(station_col).agg(
+    StationMax=("MaxTemp", "max"),
+    StationMin=("MinTemp", "min")
+    )
+station_extremes["Range"] = station_extremes["StationMax"] - station_extremes["StationMin"]
 
-with open("largest_temp_range_station.txt", "w") as f:
-    for _, row in largest_range_stations.iterrows():
+largest_range = station_extremes["Range"] .max()
+winners = station_extremes[station_extremes["Range"] == largest_range]
+
+with open("largest_temp_range_station.txt", "w", encoding="utf-8") as f:
+    for station, row in winners.iterrows():
         f.write(
-            f"Station {row['STATION_NAME']}: "
-            f"Range {row['TempRange']:.1f}°C "
-            f"(Max: {row['MaxTemp']:.1f}°C, Min: {row['MinTemp']:.1f}°C)\n")
+     f"{station}: Range {row['Range']:.2f}°C "
+            f"(Max: {row['StationMax']:.2f}°C, Min: {row['StationMin']:.2f}°C)\n")
 
 combined_df["TempStdDev"] = combined_df[month_columns].std(axis=1)
 
